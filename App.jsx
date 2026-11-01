@@ -42,19 +42,22 @@ function Booking({session,places}){
  return <div className="page-wrap"><form className="panel form-panel" onSubmit={submit}><div className="eyebrow">BOOKING REQUEST</div><h2>Đăng ký trải nghiệm</h2><p className="muted">Yêu cầu được lưu trực tiếp vào cơ sở dữ liệu NÉP.</p>{tour&&<div className="result-box"><b>{tour.title}</b><p>Giá cơ bản tham khảo: {money(tour.price_from)} / khách</p>{optionField('hotel',hotel,setHotel,'Hạng khách sạn')}{optionField('transport',transport,setTransport,'Phương tiện di chuyển')}{optionField('room',room,setRoom,'Loại phòng')}{estimate===null?<p><b>Phụ thu cần NÉP xác nhận.</b> Tổng tiền cuối cùng chưa được xác định.</p>:<p><b>Dự tính: {money(estimate)} / khách</b></p>}</div>}{journeyId&&departures.length>0&&<label className="field-label">Ngày khởi hành<select required value={selectedDeparture} onChange={e=>{const d=departures.find(x=>x.id===e.target.value);setSelectedDeparture(e.target.value);if(d)setDate(d.departure_date)}}>{departures.map(d=><option key={d.id} value={d.id}>{new Date(d.departure_date+'T00:00:00').toLocaleDateString('vi-VN')}</option>)}</select></label>}{!journeyId&&<label className="field-label">Điểm đến<select value={place} onChange={e=>setPlace(e.target.value)}>{places.map(p=><option key={p.id}>{p.name}</option>)}</select></label>}<label className="field-label">Ngày dự kiến<input type="date" required min={new Date().toISOString().slice(0,10)} value={date} onChange={e=>setDate(e.target.value)}/></label><label className="field-label">Số khách<input type="number" min="1" max="30" required value={guests} onChange={e=>setGuests(e.target.value)}/></label><label className="field-label">Ghi chú<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Yêu cầu đặc biệt, nhu cầu hỗ trợ..."/></label>{loadingOptions&&<p className="muted">Đang tải tùy chọn dịch vụ...</p>}<button className="button full" disabled={busy||loadingOptions}>{busy?'Đang gửi...':'Gửi yêu cầu đặt chỗ'}</button>{message&&<Status type={message.startsWith('Đã gửi')?'success':'error'}>{message}</Status>}</form></div>
 }
 function Account({session}){
- const [bookings,setBookings]=useState([]),[stamps,setStamps]=useState([]),[memory,setMemory]=useState(''),[memories,setMemories]=useState([]),[photos,setPhotos]=useState({}),[certificates,setCertificates]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState('');
+ const [bookings,setBookings]=useState([]),[stamps,setStamps]=useState([]),[memory,setMemory]=useState(''),[memories,setMemories]=useState([]),[photos,setPhotos]=useState({}),[certificates,setCertificates]=useState([]),[supportRequests,setSupportRequests]=useState([]),[journeyPlans,setJourneyPlans]=useState({}),[error,setError]=useState(''),[busy,setBusy]=useState('');
  const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]);
  async function loadAccount(){
-  const [b,c,m,p,cert]=await Promise.all([
+  const [b,c,m,p,cert,tickets]=await Promise.all([
    supabase.from('bookings').select('*').order('created_at',{ascending:false}),
    supabase.from('my_checkins').select('*').order('checked_in_at',{ascending:false}),
    supabase.from('memories').select('*').order('created_at',{ascending:false}),
    supabase.from('journey_photos').select('*').order('created_at',{ascending:false}),
-   supabase.from('journey_certificates').select('*').order('issued_at',{ascending:false})
+   supabase.from('journey_certificates').select('*').order('issued_at',{ascending:false}),
+   supabase.from('support_tickets').select('*').order('created_at',{ascending:false})
   ]);
   const failed=[b,c,m,p,cert].find(x=>x.error);
   if(failed){setError(failed.error.message);return}
-  setBookings(b.data||[]);setStamps(c.data||[]);setMemories(m.data||[]);setCertificates(cert.data||[]);
+  setBookings(b.data||[]);setStamps(c.data||[]);setMemories(m.data||[]);setCertificates(cert.data||[]);setSupportRequests(tickets.data||[]);
+  const journeyIds=[...new Set((b.data||[]).map(x=>x.journey_id).filter(Boolean))];
+  if(journeyIds.length){const {data:journeys,error:journeyError}=await supabase.from('journeys').select('*').in('id',journeyIds);if(!journeyError){const map={};(journeys||[]).forEach(j=>map[j.id]=j);setJourneyPlans(map)}}else setJourneyPlans({});
   const grouped={};
   for(const photo of (p.data||[])){
    const {data}=await supabase.storage.from('nep-journey-photos').createSignedUrl(photo.storage_path,3600);
@@ -98,6 +101,15 @@ function Account({session}){
    <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em>{b.status==='completed'&&b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<button className="button small" disabled={busy===b.id} onClick={()=>issueCertificate(b)}>{busy===b.id?'Đang tạo...':'Nhận chứng nhận hoàn thành'}</button>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
    <div className="panel"><h3><QrCode/> Hộ chiếu khám phá</h3><div className="stamp-count">{stamps.length}<small>dấu mốc đã xác thực</small></div>{stamps.map(s=><div className="data-row" key={s.id}><b>{s.place_name||'Điểm khám phá'}</b><span>{new Date(s.checked_in_at).toLocaleString('vi-VN')}</span></div>)}</div>
   </div>
+  <section className="panel memory-panel">
+   <h3><CalendarDays/> Lịch trình chuyến đi</h3>
+   {bookings.filter(b=>b.journey_id).length?bookings.filter(b=>b.journey_id).map(b=>{const journey=journeyPlans[b.journey_id];const steps=Array.isArray(journey?.itinerary)?journey.itinerary:[];return <article className="data-row" key={'itinerary-'+b.id}><b>{journey?.title||b.place_name}</b><span>{b.travel_date} · {b.status==='confirmed'?'Đã xác nhận':b.status==='completed'?'Đã hoàn thành':'Đang chờ xác nhận'}</span>{steps.length?<ol className="account-itinerary">{steps.map((step,i)=><li key={i}><b>{step.time||'Theo chương trình'} · {step.title||step.activity||'Hoạt động'}</b><span>{step.description||step.note||step.location||''}</span></li>)}</ol>:<p className="muted">Lịch trình chi tiết sẽ hiển thị khi được NÉP cập nhật cho hành trình này.</p>}</article>}) : <p className="muted">Lịch trình điện tử sẽ xuất hiện tại đây khi bạn có booking gắn với tour NÉP.</p>}
+  </section>
+  <section className="panel memory-panel">
+   <h3><Headphones/> Yêu cầu hỗ trợ của tôi</h3>
+   {supportRequests.length?supportRequests.map(ticket=><div className="data-row" key={ticket.id}><b>{ticket.issue}</b><span>{ticket.detail}</span><em>{ticket.status==='open'?'Mới tiếp nhận':ticket.status==='in_progress'?'Đang xử lý':ticket.status==='resolved'?'Đã xử lý':ticket.status}</em><small className="muted">{new Date(ticket.created_at).toLocaleString('vi-VN')} · Liên hệ: {ticket.contact}</small></div>):<p className="muted">Bạn chưa gửi yêu cầu hỗ trợ nào.</p>}
+   <Link className="button small" to="/support">Gửi yêu cầu mới</Link>
+  </section>
   <section className="panel memory-panel">
    <h3><Camera/> Ký ức hành trình</h3><p className="muted">Trong chuyến đi, bạn có thể tự nguyện chọn ảnh để lưu lại. Không đăng ảnh vẫn được hoàn thành tour và nhận chứng nhận khi đủ điều kiện.</p>
    <form onSubmit={uploadPhotos}>
