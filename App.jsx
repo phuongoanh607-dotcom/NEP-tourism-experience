@@ -39,7 +39,8 @@ function Booking({session,places}){
  const requiresQuote=selectedOptions.some(x=>x.price_status==='quote_required'||x.price_delta_per_person===null);
  const estimate=tour&&!requiresQuote?Number(tour.price_from||0)+selectedOptions.reduce((sum,x)=>sum+Number(x.price_delta_per_person||0),0):null;
  const group=type=>options.filter(x=>x.option_type===type);
- async function submit(e){e.preventDefault();setBusy(true);setMessage('');try{const snapshot=selectedOptions.map(x=>({type:x.option_type,code:x.code,name:x.name,price_status:x.price_status,price_delta_per_person:x.price_delta_per_person}));const payload={user_id:session.user.id,place_name:place,travel_date:date,guests:Number(guests),note,status:'pending'};if(journeyId){payload.journey_id=journeyId;payload.departure_id=selectedDeparture||null;payload.hotel_option_id=hotel||null;payload.transport_option_id=transport||null;payload.room_option_id=room||null;payload.quoted_price_per_person=estimate;payload.quoted_total=estimate===null?null:estimate*Number(guests);payload.quote_status='pending';payload.note=[note,'Lựa chọn dịch vụ: '+snapshot.map(x=>x.name).join(', ')].filter(Boolean).join('\n')}const {data,error}=await supabase.from('bookings').insert(payload).select('id,booking_code').single();if(error)throw error;setBookingInfo({id:data.id,code:data.booking_code,total:estimate===null?null:estimate*Number(guests)});setMessage('Đã tạo yêu cầu đặt chỗ. Chọn ngân hàng bên dưới để thanh toán mô phỏng.')}catch(e){setMessage(e.message)}finally{setBusy(false)}}
+ async function submit(e){e.preventDefault();setBusy(true);setMessage('');try{const snapshot=selectedOptions.map(x=>({type:x.option_type,code:x.code,name:x.name,price_status:x.price_status,price_delta_per_person:x.price_delta_per_person}));const payload={user_id:session.user.id,place_name:place,travel_date:date,guests:Number(guests),note,status:'pending'};if(journeyId){payload.journey_id=journeyId;payload.departure_id=selectedDeparture||null;payload.hotel_option_id=hotel||null;payload.transport_option_id=transport||null;payload.room_option_id=room||null;payload.quoted_price_per_person=estimate;payload.quoted_total=estimate===null?null:estimate*Number(guests);payload.quote_status='pending';payload.note=[note,'Lựa chọn dịch vụ: '+snapshot.map(x=>x.name).join(', ')].filter(Boolean).join('
+')}const {data,error}=await supabase.from('bookings').insert(payload).select('id,booking_code').single();if(error)throw error;setBookingInfo({id:data.id,code:data.booking_code,total:estimate===null?null:estimate*Number(guests)});setMessage('Đã tạo yêu cầu đặt chỗ. Chọn ngân hàng bên dưới để thanh toán mô phỏng.')}catch(e){setMessage(e.message)}finally{setBusy(false)}}
  const optionField=(type,value,setter,label)=>group(type).length>0&&<label className="field-label">{label}<select value={value} onChange={e=>setter(e.target.value)}>{group(type).map(x=><option key={x.id} value={x.id}>{x.name}{x.price_delta_per_person===null?' · Chờ báo giá':x.price_delta_per_person===0?' · Đã gồm':' · +'+money(x.price_delta_per_person)+'/khách'}</option>)}</select></label>;
  async function confirmDemoPayment(){setPayBusy(true);setPaymentMessage('');try{const {data,error}=await supabase.rpc('confirm_demo_payment',{p_booking_id:bookingInfo.id,p_provider:bank});if(error)throw error;setDemoPaid(true);setPaymentMessage('Thanh toán mô phỏng thành công · Mã giao dịch: '+data.reference_code);setBookingInfo(x=>({...x,paymentStatus:'paid_demo',paymentReference:data.reference_code}));}catch(e){setPaymentMessage(e.message||'Không thể xác nhận thanh toán mô phỏng.')}finally{setPayBusy(false)}}
  const chosenBank=banks.find(x=>x.id===bank)||banks[0];
@@ -178,7 +179,8 @@ function Admin({session}){
  const [tab,setTab]=useState('overview'),[bookings,setBookings]=useState([]),[places,setPlaces]=useState([]),[feedback,setFeedback]=useState([]),[support,setSupport]=useState([]),[storytellers,setStorytellers]=useState([]),[hostRequests,setHostRequests]=useState([]),[journeys,setJourneys]=useState([]),[departures,setDepartures]=useState([]),[stops,setStops]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const [placeForm,setPlaceForm]=useState({name:'',region:'',category:'',description:'',lat:'10.7769',lng:'106.7009',price_from:'0',duration:'Nửa ngày'});
  const [storyForm,setStoryForm]=useState({name:'',bio:'',region:'',specialty:'',contact:''});
- const [stopForm,setStopForm]=useState({journey_id:'',title:'',stop_order:'1',is_required:true});\n const [departureForm,setDepartureForm]=useState({journey_id:'',departure_date:'',start_time:'08:00',end_time:'17:00',price_per_person:'',capacity:'20',operating_note:''});
+ const [stopForm,setStopForm]=useState({journey_id:'',title:'',stop_order:'1',is_required:true});
+ const [departureForm,setDepartureForm]=useState({journey_id:'',departure_date:'',start_time:'08:00',end_time:'17:00',price_per_person:'',capacity:'20',operating_note:''});
  async function load(){
   setError('');
   const results=await Promise.all([
@@ -189,7 +191,8 @@ function Admin({session}){
    supabase.from('storytellers').select('*').order('created_at',{ascending:false}),
    supabase.from('storyteller_requests').select('*, storytellers(name)').order('created_at',{ascending:false}),
    supabase.from('journeys').select('id,title,region,price_from,is_published').order('title'),
-   supabase.from('journey_departures').select('*, journeys(title)').order('departure_date',{ascending:true}),\n   supabase.from('journey_stops').select('*, journeys(title)').order('stop_order',{ascending:true})
+   supabase.from('journey_departures').select('*, journeys(title)').order('departure_date',{ascending:true}),
+   supabase.from('journey_stops').select('*, journeys(title)').order('stop_order',{ascending:true})
   ]);
   const err=results.find(r=>r.error);if(err){setError(err.error.message);return}
   [setBookings,setPlaces,setFeedback,setSupport,setStorytellers,setHostRequests,setJourneys,setDepartures,setStops].forEach((setter,i)=>setter(results[i].data||[]));
@@ -197,7 +200,8 @@ function Admin({session}){
  }
  useEffect(()=>{load()},[]);
  async function update(table,id,patch){const {error}=await supabase.from(table).update(patch).eq('id',id);if(error){setError(error.message);return}load()}
- async function addStop(e){e.preventDefault();setBusy(true);setError('');const {error}=await supabase.from('journey_stops').insert({journey_id:stopForm.journey_id,title:stopForm.title,stop_order:Number(stopForm.stop_order),is_required:stopForm.is_required});setBusy(false);if(error){setError(error.message);return}setStopForm(x=>({...x,title:'',stop_order:String(Number(x.stop_order)+1)}));load()}\n async function addDeparture(e){
+ async function addStop(e){e.preventDefault();setBusy(true);setError('');const {error}=await supabase.from('journey_stops').insert({journey_id:stopForm.journey_id,title:stopForm.title,stop_order:Number(stopForm.stop_order),is_required:stopForm.is_required});setBusy(false);if(error){setError(error.message);return}setStopForm(x=>({...x,title:'',stop_order:String(Number(x.stop_order)+1)}));load()}
+ async function addDeparture(e){
   e.preventDefault();setBusy(true);setError('');
   const payload={journey_id:departureForm.journey_id,departure_date:departureForm.departure_date,start_time:departureForm.start_time||null,end_time:departureForm.end_time||null,price_per_person:Number(departureForm.price_per_person),capacity:Number(departureForm.capacity),operating_note:departureForm.operating_note,status:'scheduled'};
   const {error}=await supabase.from('journey_departures').insert(payload);
