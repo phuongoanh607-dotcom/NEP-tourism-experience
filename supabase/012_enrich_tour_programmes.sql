@@ -59,5 +59,7 @@ with plans(title,itinerary,inclusions,exclusions) as (values
 '["Chi tiêu cá nhân và đồ uống","Phụ thu phòng đơn","Dịch vụ tàu/thuyền tự chọn","Chi phí ngoài chương trình"]'::jsonb)
 )
 update public.journeys j
-set itinerary=p.itinerary,inclusions=p.inclusions,exclusions=p.exclusions
+set itinerary=p.itinerary,
+    inclusions=ARRAY(SELECT jsonb_array_elements_text(p.inclusions)),
+    exclusions=ARRAY(SELECT jsonb_array_elements_text(p.exclusions))
 from plans p where j.title=p.title;
