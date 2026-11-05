@@ -56,3 +56,9 @@ body{background:#fbfaf6;color:#27382f;font-family:'DM Sans',sans-serif}
 .itinerary-panel,.departure-panel{border-radius:2px;border-color:#e9e3d8}
 @media(max-width:850px){.hero{grid-template-columns:1fr;padding:0 24px 35px}.hero-copy{padding:45px 0 10px}.hero-art{height:360px}.signature-grid{grid-template-columns:repeat(2,1fr)}.signature-card:nth-child(2){border-right:0}.signature-card:nth-child(-n+2){border-bottom:1px solid var(--line)}}
 @media(max-width:650px){.hero{padding:0 16px 28px;gap:20px}.hero h1{font-size:45px}.hero-art{height:270px}.section{padding-top:42px;padding-bottom:42px}.places-grid{grid-template-columns:1fr}.place-visual{height:220px}.signature-grid{grid-template-columns:1fr 1fr}.signature-card{padding:18px 13px}.tour-hero{grid-template-columns:1fr;padding:40px 22px}.tour-hero-art{height:240px}.tour-content{padding:42px 0 55px}}
+
+/* Tour cover images: use published journey photos when available; retain editorial fallback art. */
+.tour-card-art{position:relative;overflow:hidden;isolation:isolate}
+.tour-card-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:-1;display:block}
+.tour-card-art:has(.tour-card-image){background-image:linear-gradient(180deg,rgba(15,35,29,.08),rgba(15,35,29,.28))}
+.tour-card-art>span,.tour-card-art>b{position:relative;z-index:1}
