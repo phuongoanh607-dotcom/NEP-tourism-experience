@@ -78,3 +78,22 @@ body{background:#fbfaf6;color:#27382f;font-family:'DM Sans',sans-serif}
 
 /* Nearby discovery */
 .nearby-panel{display:grid;gap:14px}.nearby-intro{display:flex;align-items:center;gap:14px}.nearby-intro p{margin:5px 0 0;color:var(--muted,#667)}.nearby-status,.nearby-weather{margin:0;color:var(--muted,#667)}.nearby-list{display:grid;gap:10px}.nearby-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px;border:1px solid var(--line,#ddd);border-radius:14px}.nearby-item div{display:grid;gap:4px}.nearby-item span,.nearby-item small{color:var(--muted,#667)}.nearby-item a{white-space:nowrap;color:var(--green,#245b49);font-weight:600}@media(max-width:600px){.nearby-item{align-items:flex-start;flex-direction:column}}
+
+
+/* Discovery Passport — keeps verified check-ins readable on desktop and mobile. */
+.passport-panel{padding:26px;background:linear-gradient(135deg,#fffdf7 0%,#f3efe3 100%);border:1px solid #d9d0bd;position:relative;overflow:hidden}
+.passport-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:18px;border-bottom:1px dashed #c9bda7}
+.passport-heading h3{display:flex;align-items:center;gap:9px;margin:7px 0;font-family:'Playfair Display',serif;font-size:25px;font-weight:500;color:#173c32}
+.passport-heading p{margin:0;max-width:520px;font-size:13px;line-height:1.6}
+.passport-total{flex:0 0 auto;display:grid;place-content:center;width:72px;height:72px;border:1px solid #b9a987;border-radius:50%;font-family:'Playfair Display',serif;font-size:27px;color:#173c32;text-align:center}
+.passport-total small{font:10px/1.2 inherit;letter-spacing:.08em;text-transform:uppercase}
+.passport-stamps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-top:18px}
+.passport-stamp{display:flex;align-items:center;gap:12px;min-width:0;padding:14px;border:1px dashed #c8bda8;border-radius:12px;background:#fffdf8}
+.passport-stamp-number{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:50%;background:#e6eadf;color:#244d3e;font-size:12px;font-weight:800}
+.passport-stamp>div{display:grid;gap:5px;min-width:0;flex:1}
+.passport-stamp>div b{color:#243d32;font-size:14px;overflow-wrap:anywhere}
+.passport-stamp>div span{color:#777568;font-size:11px}
+.passport-verified{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:#35664c;font-size:10px;font-weight:700}
+.passport-empty{display:grid;justify-items:center;gap:10px;padding:30px 14px 12px;text-align:center;color:#526458}
+.passport-empty p{max-width:390px;margin:0;font-size:13px;line-height:1.6}
+@media(max-width:650px){.passport-panel{padding:18px}.passport-heading h3{font-size:21px}.passport-total{width:60px;height:60px;font-size:23px}.passport-stamps{grid-template-columns:1fr}.passport-stamp{flex-wrap:wrap}.passport-verified{margin-left:50px}}
