@@ -128,9 +128,9 @@ function Account({session}){
    setFiles([]);await loadAccount();setError('');
   }catch(err){setError(err.message||'Không tải được ảnh.')}finally{setBusy('')}
  }
- async function issueCertificate(booking){
+ async function completeJourney(booking){
   setBusy(booking.id);setError('');
-  const {data,error}=await supabase.rpc('issue_journey_certificate',{p_booking_id:booking.id});
+  const {data,error}=await supabase.rpc('customer_complete_journey',{p_booking_id:booking.id});
   if(error)setError(error.message);
   else {await loadAccount();setError('Chứng nhận đã được cấp: '+data.certificate_code)}
   setBusy('');
@@ -141,7 +141,7 @@ function Account({session}){
   {error&&<Status type={error.startsWith('Chứng nhận')?'success':'error'}>{error}</Status>}
   <div className="account-shortcuts"><Link className="button" to="/feedback">Gửi đánh giá</Link><Link className="button ghost" to="/support">Yêu cầu hỗ trợ</Link><Link className="button ghost" to="/booking">Đặt trải nghiệm</Link></div>
   <div className="account-grid">
-   <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em><span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>{b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}{b.status==='completed'&&b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<button className="button small" disabled={busy===b.id} onClick={()=>issueCertificate(b)}>{busy===b.id?'Đang tạo...':'Nhận chứng nhận hoàn thành'}</button>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
+   <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em><span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>{b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}{b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<><small>{(photos[b.id]||[]).length} ảnh đã tải lên</small>{b.status!=='completed'?<button className="button small" disabled={busy===b.id||(photos[b.id]||[]).length===0} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang xác nhận...':'Tôi đã hoàn thành hành trình'}</button>:<button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang tạo...':'Nhận chứng nhận hoàn thành'}</button>}</>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
    <div className="panel"><h3><QrCode/> Hộ chiếu khám phá</h3><div className="stamp-count">{stamps.length}<small>dấu mốc đã xác thực</small></div>{stamps.map(s=><div className="data-row" key={s.id}><b>{s.stamp_title||s.journey_stops?.title||'Điểm khám phá'}</b><span>{new Date(s.stamp_time||s.checked_in_at).toLocaleString('vi-VN')}</span></div>)}</div>
   </div>
   <section className="panel memory-panel">
@@ -154,7 +154,7 @@ function Account({session}){
    <Link className="button small" to="/support">Gửi yêu cầu mới</Link>
   </section>
   <section className="panel memory-panel">
-   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Trong chuyến đi, bạn có thể tự nguyện chọn ảnh để lưu lại. Không đăng ảnh vẫn được hoàn thành tour và nhận chứng nhận khi đủ điều kiện.</p>
+   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Trong chuyến đi, bạn có thể tự nguyện chọn ảnh để lưu lại. Sau khi tải ít nhất một ảnh kỷ niệm, bạn có thể tự xác nhận hoàn thành để hệ thống cấp chứng nhận kèm ảnh.</p>
    <form onSubmit={uploadPhotos}>
     <label className="field-label">Chọn chuyến đi<select required value={selectedBooking} onChange={e=>setSelectedBooking(e.target.value)}><option value="">Chọn booking đã gắn hành trình</option>{bookings.filter(b=>b.journey_id).map(b=><option key={b.id} value={b.id}>{b.place_name} · {b.travel_date}</option>)}</select></label>
     <label className="field-label">Hình ảnh kỷ niệm<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>setFiles(Array.from(e.target.files||[]))}/></label>
@@ -169,7 +169,7 @@ function Account({session}){
     <div className="certificate-kicker">NÉP · CHẠM VÀO NÉT RIÊNG VIỆT NAM</div><div className="certificate-rule">✦ ❀ ✦</div><div className="certificate-overline">CHỨNG NHẬN HOÀN THÀNH HÀNH TRÌNH</div><h2>{name}</h2><p>Đã hoàn thành hành trình khám phá</p><h3>{booking?.place_name||'Hành trình NÉP'}</h3>
     {items.length?<div className="certificate-photos">{items.slice(0,4).map(p=><img key={p.id} src={p.url} alt="Ảnh kỷ niệm trên chứng nhận"/>)}</div>:<div className="certificate-no-photo">Mỗi hành trình là một câu chuyện đáng nhớ</div>}
     <p className="certificate-date">Ngày cấp: {new Date(cert.issued_at).toLocaleDateString('vi-VN')}</p><div className="certificate-code">MÃ CHỨNG NHẬN · {cert.certificate_code}</div><button className="button small no-print" onClick={()=>window.print()}>In / Lưu chứng nhận</button>
-   </article>}) : <p className="muted">Chứng nhận sẽ xuất hiện khi booking được NÉP xác nhận hoàn thành và đủ điều kiện cấp.</p>}
+   </article>}) : <p className="muted">Sau khi bạn tải ảnh và tự xác nhận hoàn thành hành trình, chứng nhận sẽ xuất hiện tại đây.</p>}
   </section>
  </div>
 }
