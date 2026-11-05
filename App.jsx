@@ -20,7 +20,8 @@ function Home({session,places}){const nav=useNavigate();const [mood,setMood]=use
 const [planError,setPlanError]=useState(''); const createPlan=()=>{try{setPlan(makeMoodPlan(mood,duration));setPlanError('')}catch(e){setPlan(null);setPlanError(e.message||'Chưa thể tạo gợi ý hành trình.')}};
 async function getWeather(){const p=places.find(x=>x.name===weatherPlace);if(!p||!Number.isFinite(Number(p.lat))||!Number.isFinite(Number(p.lng))){setWeather(null);setWeatherError('Điểm đến chưa có tọa độ hợp lệ để kiểm tra thời tiết.');return;}setWeather(null);setWeatherError('');try{const url=`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&current=temperature_2m,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,precipitation_sum,precipitation_probability_max&forecast_days=3&timezone=auto`;const res=await fetch(url);if(!res.ok)throw new Error('Không lấy được dữ liệu thời tiết.');const data=await res.json();setWeather({...data.current,daily:data.daily});}catch(e){setWeatherError(e.message)}}
 const isWeatherRisk=weather&&(Number(weather.precipitation)>0.5||[51,53,55,61,63,65,66,67,71,73,75,77,80,81,82,85,86,95,96,99].includes(Number(weather.weather_code))||(weather.daily?.precipitation_probability_max||[]).some(x=>Number(x)>=60)|| (weather.daily?.precipitation_sum||[]).some(x=>Number(x)>=5));
-const selectedWeatherPlace=places.find(x=>x.name===weatherPlace);\nconst planBPlaces=places.filter(x=>(!selectedWeatherPlace?.region||x.region===selectedWeatherPlace.region)&&x.id!==selectedWeatherPlace?.id).filter(x=>{const words=[x.name,x.category,x.description].join(' ').toLowerCase();return /(trong nhà|indoor|bảo tàng|museum|ẩm thực|ăn uống|nhà hàng|quán ăn|cafe|cà phê|spa|nghỉ dưỡng|resort|wellness|chợ|ẩm thực|thủ công|làng nghề|di sản|văn hóa|gallery|trung tâm thương mại)/i.test(words)}).slice(0,6);
+const selectedWeatherPlace=places.find(x=>x.name===weatherPlace);
+const planBPlaces=places.filter(x=>(!selectedWeatherPlace?.region||x.region===selectedWeatherPlace.region)&&x.id!==selectedWeatherPlace?.id).filter(x=>{const words=[x.name,x.category,x.description].join(' ').toLowerCase();return /(trong nhà|indoor|bảo tàng|museum|ẩm thực|ăn uống|nhà hàng|quán ăn|cafe|cà phê|spa|nghỉ dưỡng|resort|wellness|chợ|ẩm thực|thủ công|làng nghề|di sản|văn hóa|gallery|trung tâm thương mại)/i.test(words)}).slice(0,6);
 
 const [nearby,setNearby]=useState([]),[nearbyStatus,setNearbyStatus]=useState(''),[nearbyBusy,setNearbyBusy]=useState(false),[nearbyWeather,setNearbyWeather]=useState(null);
 const distanceKm=(lat1,lon1,lat2,lon2)=>{const rad=x=>x*Math.PI/180;const dLat=rad(lat2-lat1),dLon=rad(lon2-lon1);const h=Math.sin(dLat/2)**2+Math.cos(rad(lat1))*Math.cos(rad(lat2))*Math.sin(dLon/2)**2;return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));};
@@ -92,7 +93,9 @@ function Account({session}){
  const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]),[refreshing,setRefreshing]=useState(false);
  async function loadAccount(){
   setRefreshing(true);
-  const [b,m,p,cert,tickets]=await Promise.all([\n   supabase.from('bookings').select('*').order('created_at',{ascending:false}),\n   supabase.from('memories').select('*').order('created_at',{ascending:false}),
+  const [b,m,p,cert,tickets]=await Promise.all([
+   supabase.from('bookings').select('*').order('created_at',{ascending:false}),
+   supabase.from('memories').select('*').order('created_at',{ascending:false}),
    supabase.from('journey_photos').select('*').order('created_at',{ascending:false}),
    supabase.from('journey_certificates').select('*').order('issued_at',{ascending:false}),
    supabase.from('support_tickets').select('*').order('created_at',{ascending:false})
