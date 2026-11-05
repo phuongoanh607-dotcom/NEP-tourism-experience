@@ -48,8 +48,9 @@ function Booking({session}){
 
 function Account({session}){
  const [bookings,setBookings]=useState([]),[stamps,setStamps]=useState([]),[memory,setMemory]=useState(''),[memories,setMemories]=useState([]),[photos,setPhotos]=useState({}),[certificates,setCertificates]=useState([]),[supportRequests,setSupportRequests]=useState([]),[journeyPlans,setJourneyPlans]=useState({}),[error,setError]=useState(''),[busy,setBusy]=useState('');
- const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]);
+ const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]),[refreshing,setRefreshing]=useState(false);
  async function loadAccount(){
+  setRefreshing(true);
   const [b,c,legacy,m,p,cert,tickets]=await Promise.all([
    supabase.from('bookings').select('*').order('created_at',{ascending:false}),
    supabase.from('journey_checkins').select('*, journey_stops(title)').order('checked_in_at',{ascending:false}),
@@ -60,7 +61,7 @@ function Account({session}){
    supabase.from('support_tickets').select('*').order('created_at',{ascending:false})
   ]);
   const failed=[b,c,legacy,m,p,cert,tickets].find(x=>x.error);
-  if(failed){setError(failed.error.message);return}
+  if(failed){setError(failed.error.message);setRefreshing(false);return}
   setBookings(b.data||[]);setStamps([...(c.data||[]).map(x=>({...x,stamp_title:x.journey_stops?.title||'Điểm dừng hành trình',stamp_time:x.checked_in_at})),...(legacy.data||[]).map(x=>({...x,stamp_title:x.places?.name||'Điểm khám phá',stamp_time:x.checked_in_at}))].sort((a,b)=>new Date(b.stamp_time)-new Date(a.stamp_time)));setMemories(m.data||[]);setCertificates(cert.data||[]);setSupportRequests(tickets.data||[]);
   const journeyIds=[...new Set((b.data||[]).map(x=>x.journey_id).filter(Boolean))];
   if(journeyIds.length){const {data:journeys,error:journeyError}=await supabase.from('journeys').select('*').in('id',journeyIds);if(!journeyError){const map={};(journeys||[]).forEach(j=>map[j.id]=j);setJourneyPlans(map)}}else setJourneyPlans({});
@@ -70,6 +71,7 @@ function Account({session}){
    if(data?.signedUrl)(grouped[photo.booking_id]??=[]).push({...photo,url:data.signedUrl});
   }
   setPhotos(grouped);
+  setRefreshing(false);
  }
  useEffect(()=>{loadAccount()},[]);
  async function addMemory(e){e.preventDefault();const {data,error}=await supabase.from('memories').insert({user_id:session.user.id,content:memory}).select().single();if(error){setError(error.message);return}setMemories([data,...memories]);setMemory('')}
@@ -100,7 +102,7 @@ function Account({session}){
  }
  const name=session.user.user_metadata?.full_name||session.user.email;
  return <div className="page-wrap">
-  <div className="section-title"><div><div className="eyebrow">MY NÉP</div><h2>Xin chào, {name}</h2><p className="muted">Hộ chiếu khám phá và những kỷ niệm trên hành trình của bạn.</p></div></div>
+  <div className="section-title"><div><div className="eyebrow">MY NÉP</div><h2>Xin chào, {name}</h2><p className="muted">Hộ chiếu khám phá và những kỷ niệm trên hành trình của bạn.</p></div><button className="button ghost" disabled={refreshing} onClick={loadAccount}>{refreshing?'Đang cập nhật...':'Làm mới dữ liệu'}</button></div>
   {error&&<Status type={error.startsWith('Chứng nhận')?'success':'error'}>{error}</Status>}
   <div className="account-shortcuts"><Link className="button" to="/feedback">Gửi đánh giá</Link><Link className="button ghost" to="/support">Yêu cầu hỗ trợ</Link><Link className="button ghost" to="/booking">Đặt trải nghiệm</Link></div>
   <div className="account-grid">
