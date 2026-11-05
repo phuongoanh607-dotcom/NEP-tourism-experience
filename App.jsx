@@ -59,35 +59,25 @@ function Booking({session}){
  </div>
  <div className="muted" style={{marginTop:10,fontSize:12}}>Đây là luồng trình diễn, không kết nối cổng thanh toán và không phát sinh giao dịch thật.</div>
  </fieldset><label className="field-label">Ghi chú<textarea value={note} onChange={e=>setNote(e.target.value)} placeholder="Yêu cầu đặc biệt, nhu cầu hỗ trợ..."/></label>{loadingOptions&&<p className="muted">Đang tải tùy chọn dịch vụ...</p>}<button className="button full" disabled={busy||loadingOptions||Boolean(bookingInfo)}>{busy?'Đang gửi...':bookingInfo?'Đã tạo booking':'Gửi yêu cầu đặt chỗ'}</button>{message&&<Status type={message.startsWith('Đã tạo')?'success':'error'}>{message}</Status>}</form>
- {bookingInfo&&<section className="panel form-panel"><div className="eyebrow">NÉP · BOOKING STATUS</div><h2>Yêu cầu đặt tour đã được ghi nhận</h2><p>Mã booking: <b>{bookingInfo.code}</b></p><p>Tổng dự tính: <b>{bookingInfo.total===null?'Chờ báo giá':money(bookingInfo.total)}</b></p><p>Trạng thái booking: <b>Chờ NÉP xác nhận</b></p><div className="payment-preview">
- <div className="eyebrow">NÉP · DEMO CHECKOUT</div><h3>Hoàn tất thanh toán mô phỏng</h3>
- <p className="muted">Chọn phương thức và ngân hàng/đơn vị ví. Các thao tác dưới đây chạy trên hệ thống demo, không trừ tiền thật.</p>
- <div className="payment-demo-methods" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))',gap:10,margin:'16px 0'}}>
+ {bookingInfo&&<section className="panel form-panel"><div className="eyebrow">NÉP · BOOKING STATUS</div><h2>Yêu cầu đặt tour đã được ghi nhận</h2><p>Mã booking: <b>{bookingInfo.code}</b></p><p>Tổng dự tính: <b>{bookingInfo.total===null?'Chờ báo giá':money(bookingInfo.total)}</b></p><p>Trạng thái booking: <b>Chờ NÉP xác nhận</b></p><div className="payment-preview" style={{marginTop:22,padding:20,border:'1px solid #dce5df',borderRadius:20,background:'#f8faf8'}}>
+ <div className="eyebrow">NÉP · SECURE DEMO CHECKOUT</div><h3 style={{fontSize:24,margin:'8px 0'}}>Thanh toán đặt tour</h3>
+ <p className="muted">Chọn ngân hàng cụ thể. Đây là giao diện mô phỏng để trình diễn, không chuyển tiền thật.</p>
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))',gap:10,margin:'18px 0'}}>
  {[
- ['bank_transfer','Chuyển khoản','🏦'],['atm_card','Thẻ ATM nội địa','💳'],['international_card','Visa / Mastercard','🌐'],['momo','MoMo','M'],['zalopay','ZaloPay','Z']
- ].map(([id,label,mark])=><button type="button" key={id} onClick={()=>setPaymentMethod(id)} aria-pressed={paymentMethod===id} style={{padding:14,borderRadius:14,border:paymentMethod===id?'2px solid #153d34':'1px solid #d8ded9',background:paymentMethod===id?'#edf4ef':'white',cursor:'pointer',textAlign:'left',fontWeight:700}}><span style={{display:'block',fontSize:23,marginBottom:7}}>{mark}</span>{label}{paymentMethod===id&&<small style={{display:'block',color:'#286044',marginTop:5}}>Đang chọn ✓</small>}</button>)}
+ ['bank_transfer','Chuyển khoản QR','🏦'],['atm_card','Thẻ ATM','💳'],['international_card','Visa / Mastercard','VISA'],['momo','MoMo','M'],['zalopay','ZaloPay','Z']
+ ].map(([id,label,mark])=><button type="button" key={id} onClick={()=>setPaymentMethod(id)} style={{padding:13,borderRadius:13,border:paymentMethod===id?'2px solid #153d34':'1px solid #d6dfd9',background:paymentMethod===id?'#eaf2ec':'white',cursor:'pointer',textAlign:'left'}}><span style={{display:'block',fontSize:22,fontWeight:900,color:'#153d34',marginBottom:6}}>{mark}</span><b>{label}</b>{paymentMethod===id&&<small style={{display:'block',marginTop:5,color:'#236343'}}>✓ Đã chọn</small>}</button>)}
  </div>
- <div className="panel" style={{padding:16,margin:'14px 0'}}>
- <label className="field-label">Chọn ngân hàng / đơn vị thanh toán</label>
- <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(115px,1fr))',gap:8}}>
- {banks.map(x=><button type="button" key={x.id} onClick={()=>setSelectedBank(x.id)} style={{minHeight:66,padding:9,borderRadius:12,border:selectedBank===x.id?'2px solid #153d34':'1px solid #d8ded9',background:selectedBank===x.id?'#edf4ef':'#fff',cursor:'pointer'}}><b style={{display:'block',fontSize:16,color:'#153d34'}}>{x.id}</b><small>{x.name}</small></button>)}
- </div>
- </div>
- <div className="result-box">
- <b>Thông tin thanh toán</b><p>Đơn vị: {paymentMethod==='momo'?'Ví MoMo':paymentMethod==='zalopay'?'ZaloPay':banks.find(x=>x.id===selectedBank)?.name}</p>
- <p>Số tiền: <b>{bookingInfo.total===null?'Chờ xác nhận':money(bookingInfo.total)}</b></p><p>Nội dung: <b>NEP {bookingInfo.code}</b></p>
- <div style={{display:'flex',gap:18,alignItems:'center',flexWrap:'wrap',marginTop:12}}>
- <QRCodeSVG value={'NEP-DEMO|'+bookingInfo.code+'|'+(bookingInfo.total||0)+'|'+paymentMethod+'|'+selectedBank} size={144} level="M"/>
- <div style={{flex:1,minWidth:180}}><b>Hướng dẫn thực hiện</b>
- <ol style={{paddingLeft:20,lineHeight:1.7,marginBottom:8}}>
- <li>Kiểm tra mã booking và số tiền.</li>
- <li>{paymentMethod==='bank_transfer'?'Quét QR minh họa hoặc chọn ngân hàng để xem thông tin chuyển khoản mẫu.':paymentMethod==='momo'?'Mở giao diện ví MoMo minh họa và kiểm tra đơn hàng.':paymentMethod==='zalopay'?'Mở giao diện ZaloPay minh họa và kiểm tra đơn hàng.':'Chọn phương thức thẻ để xem bước xác nhận giao dịch mẫu.'}</li>
- <li>Nhấn nút xác nhận bên dưới để ghi nhận kết quả demo.</li></ol>
- <small className="muted">QR này chỉ chứa dữ liệu demo của NÉP, không phải mã nhận tiền.</small></div></div>
- </div>
- <div className="status info" style={{marginTop:12}}>🔒 Chế độ trình diễn: không yêu cầu số thẻ, mật khẩu, OTP hoặc đăng nhập ngân hàng; không phát sinh giao dịch thật.</div>
- {paymentResult?<Status type="success">Thanh toán mô phỏng thành công · Mã giao dịch: {paymentResult.reference_code} · {paymentResult.bank_name}</Status>:<button type="button" className="button full" disabled={paying||bookingInfo.total===null} onClick={payDemo}>{paying?'Đang xử lý...':'Xác nhận thanh toán mô phỏng'}</button>}
- </div></div>{message&&<Status type="error">{message}</Status>}<Link className="button" to="/account">Theo dõi booking</Link></section>}
+ {paymentMethod==='bank_transfer'||paymentMethod==='atm_card'?<div style={{background:'#fff',border:'1px solid #e0e7e2',borderRadius:16,padding:16}}>
+ <h4 style={{margin:'0 0 12px'}}>Chọn ngân hàng thanh toán</h4>
+ <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:9}}>
+ {banks.map(x=>{const domains={VCB:'vietcombank.com.vn',TCB:'techcombank.com.vn',MB:'mbbank.com.vn',ACB:'acb.com.vn',BIDV:'bidv.com.vn',CTG:'vietinbank.vn',AGR:'agribank.com.vn',VPB:'vpbank.com.vn',TPB:'tpb.vn',STB:'sacombank.com.vn',HDB:'hdbank.com.vn',VIB:'vib.com.vn',SHB:'shb.com.vn',MSB:'msb.com.vn',OCB:'ocb.com.vn',EIB:'eximbank.com.vn',LPB:'lpbank.com.vn',SEAB:'seabank.com.vn',BAB:'bacabank.vn',PVC:'pvcombank.com.vn'};return <button type="button" key={x.id} onClick={()=>setSelectedBank(x.id)} style={{display:'flex',alignItems:'center',gap:10,padding:10,minHeight:68,borderRadius:12,border:selectedBank===x.id?'2px solid #153d34':'1px solid #e0e6e1',background:selectedBank===x.id?'#edf4ef':'#fff',cursor:'pointer',textAlign:'left'}}><img src={'https://www.google.com/s2/favicons?domain='+domains[x.id]+'&sz=128'} alt="" width="34" height="34" style={{objectFit:'contain',borderRadius:7}} onError={e=>{e.currentTarget.style.display='none'}}/><span><b style={{display:'block'}}>{x.name}</b><small style={{color:'#64736a'}}>{x.id}</small></span>{selectedBank===x.id&&<span style={{marginLeft:'auto',color:'#236343'}}>✓</span>}</button>})}
+ </div></div>:paymentMethod==='momo'||paymentMethod==='zalopay'?<div style={{background:'#fff',border:'1px solid #e0e7e2',borderRadius:16,padding:16,display:'flex',alignItems:'center',gap:14}}><img src={'https://www.google.com/s2/favicons?domain='+(paymentMethod==='momo'?'momo.vn':'zalopay.vn')+'&sz=128'} alt="" width="52" height="52" style={{objectFit:'contain'}}/><div><b>{paymentMethod==='momo'?'Ví MoMo':'Ví ZaloPay'}</b><p className="muted" style={{margin:'4px 0'}}>Phương thức ví điện tử được chọn cho phiên trình diễn.</p></div></div>:<div style={{background:'#fff',border:'1px solid #e0e7e2',borderRadius:16,padding:16}}><b>Thanh toán thẻ quốc tế</b><p className="muted">Mô phỏng màn hình chọn Visa / Mastercard. Không nhập thông tin thẻ thật.</p><b style={{fontSize:20}}>VISA　 Mastercard</b></div>}
+ <div style={{display:'grid',gridTemplateColumns:'minmax(180px,1fr) minmax(220px,1.2fr)',gap:18,marginTop:16,background:'#fff',border:'1px solid #dfe7e1',borderRadius:16,padding:16}}>
+ <div><div className="eyebrow">ĐƠN HÀNG CỦA BẠN</div><h2 style={{fontSize:25,margin:'8px 0'}}>{bookingInfo.total===null?'Chờ báo giá':money(bookingInfo.total)}</h2><p className="muted">Mã booking: <b>{bookingInfo.code}</b></p><p className="muted">Đơn vị: <b>{paymentMethod==='momo'?'MoMo':paymentMethod==='zalopay'?'ZaloPay':banks.find(x=>x.id===selectedBank)?.name||'Visa / Mastercard'}</b></p><p className="muted">Nội dung: <b>NEP {bookingInfo.code}</b></p></div>
+ <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}><div style={{padding:10,border:'1px solid #e4e9e5',borderRadius:12}}><QRCodeSVG value={'NEP-DEMO|'+bookingInfo.code+'|'+(bookingInfo.total||0)+'|'+paymentMethod+'|'+selectedBank} size={132} level="M"/></div><div style={{flex:1,minWidth:130}}><b>QR thanh toán demo</b><p className="muted" style={{fontSize:13}}>QR chứa mã booking và số tiền minh họa, không phải mã nhận tiền.</p></div></div></div>
+ <div style={{marginTop:14,padding:13,borderRadius:12,background:'#fff8e8',color:'#73531b',fontSize:13}}>Chế độ trình diễn: không kết nối ngân hàng/cổng thanh toán thật. Không nhập số thẻ, mật khẩu hoặc OTP.</div>
+ {paymentResult?<Status type="success">Đã ghi nhận thanh toán mô phỏng · Mã giao dịch: {paymentResult.reference_code}</Status>:<button type="button" className="button full" style={{marginTop:14}} disabled={paying||bookingInfo.total===null} onClick={payDemo}>{paying?'Đang xử lý...':'Xác nhận thanh toán mô phỏng'}</button>}
+ </div>{message&&<Status type="error">{message}</Status>}<Link className="button" to="/account">Theo dõi booking</Link></section>}
  </div>
 }
 
