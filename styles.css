@@ -75,3 +75,6 @@ body{background:#fbfaf6;color:#27382f;font-family:'DM Sans',sans-serif}
 .planb-list article span,.planb-list article small{font-size:12px;line-height:1.5}
 .planb-list article a{font-size:12px;color:var(--green);font-weight:700;text-decoration:underline}
 @media(max-width:600px){.weather-forecast{grid-template-columns:1fr}.weather-forecast>div{display:grid;grid-template-columns:1fr 1fr}.weather-forecast small{grid-column:1/-1}}
+
+/* Nearby discovery */
+.nearby-panel{display:grid;gap:14px}.nearby-intro{display:flex;align-items:center;gap:14px}.nearby-intro p{margin:5px 0 0;color:var(--muted,#667)}.nearby-status,.nearby-weather{margin:0;color:var(--muted,#667)}.nearby-list{display:grid;gap:10px}.nearby-item{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px;border:1px solid var(--line,#ddd);border-radius:14px}.nearby-item div{display:grid;gap:4px}.nearby-item span,.nearby-item small{color:var(--muted,#667)}.nearby-item a{white-space:nowrap;color:var(--green,#245b49);font-weight:600}@media(max-width:600px){.nearby-item{align-items:flex-start;flex-direction:column}}
