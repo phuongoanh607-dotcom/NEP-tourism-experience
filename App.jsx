@@ -130,7 +130,14 @@ function Account({session}){
     const {error:rowError}=await supabase.from('journey_photos').insert({user_id:session.user.id,booking_id:booking.id,journey_id:booking.journey_id,storage_path:path,caption:''});
     if(rowError){await supabase.storage.from('nep-journey-photos').remove([path]);throw rowError}
    }
-   setFiles([]);await loadAccount();setError('');
+   setFiles([]);
+   const {data:certificateData,error:certificateError}=await supabase.rpc('customer_complete_journey',{p_booking_id:booking.id});
+   await loadAccount();
+   if(certificateError){
+    setError('Ảnh đã được lưu thành công. Chứng nhận chưa được cấp: '+certificateError.message);
+   }else{
+    setError('Ảnh đã lưu và chứng nhận hoàn thành đã được cấp: '+(certificateData?.certificate_code||''));
+   }
   }catch(err){setError(err.message||'Không tải được ảnh.')}finally{setBusy('')}
  }
  async function completeJourney(booking){
@@ -185,7 +192,6 @@ function Account({session}){
    </form>
    {Object.entries(photos).map(([bookingId,items])=><div className="memory-photo-group" key={bookingId}><b>{bookings.find(b=>b.id===bookingId)?.place_name||'Hành trình NÉP'}</b><div className="memory-photo-grid">{items.map(photo=><figure key={photo.id}><img src={photo.url} alt="Khoảnh khắc trong chuyến đi"/><figcaption>{new Date(photo.created_at).toLocaleDateString('vi-VN')}</figcaption></figure>)}</div></div>)}
   </section>
-  <section className="panel memory-panel"><h3><Heart/> Bưu thiếp ký ức</h3><form onSubmit={addMemory}><label className="field-label">Gắn với chuyến đi (không bắt buộc)<select value={selectedMemoryBooking} onChange={e=>{setSelectedMemoryBooking(e.target.value);setSelectedMemoryPhoto('')}}><option value="">Kỷ niệm chung</option>{bookings.filter(b=>b.journey_id).map(b=><option key={b.id} value={b.id}>{journeyPlans[b.journey_id]?.title||b.place_name} · {b.travel_date}</option>)}</select></label>{selectedMemoryBooking&&<label className="field-label">Đính kèm ảnh đã lưu (không bắt buộc)<select value={selectedMemoryPhoto} onChange={e=>setSelectedMemoryPhoto(e.target.value)}><option value="">Không đính kèm ảnh</option>{(photos[selectedMemoryBooking]||[]).map(p=><option key={p.id} value={p.id}>{p.caption||('Ảnh ngày '+new Date(p.created_at).toLocaleDateString('vi-VN'))}</option>)}</select></label>}<label className="field-label">Lời nhắn của bạn<textarea required maxLength="2000" value={memory} onChange={e=>setMemory(e.target.value)} placeholder="Điều tôi muốn nhớ về chuyến đi này..."/></label><button className="button" disabled={busy==='memory'||!memory.trim()}>{busy==='memory'?'Đang lưu...':'Lưu bưu thiếp'}</button></form><div className="memory-list">{memories.map(m=>{const linkedBooking=bookings.find(b=>b.id===m.booking_id);const linkedPhoto=m.journey_photo_id?Object.values(photos).flat().find(p=>p.id===m.journey_photo_id):null;return <blockquote key={m.id}>{m.content}{linkedPhoto&&<img src={linkedPhoto.url} alt="Ảnh trong bưu thiếp" style={{display:'block',width:'100%',maxHeight:180,objectFit:'cover',borderRadius:9,marginTop:10}}/>}<small>{linkedBooking?(journeyPlans[linkedBooking.journey_id]?.title||linkedBooking.place_name)+' · ':''}{new Date(m.created_at).toLocaleDateString('vi-VN')}</small></blockquote>})}</div></section>
   <section className="panel memory-panel"><h3><ShieldCheck/> Chứng nhận hành trình</h3>
    {certificates.length?certificates.map(cert=>{const booking=bookings.find(b=>b.id===cert.booking_id);const items=photos[cert.booking_id]||[];return <article className="journey-certificate" id={'certificate-'+cert.id} key={cert.id}>
     <div className="certificate-kicker">NÉP · CHẠM VÀO NÉT RIÊNG VIỆT NAM</div><div className="certificate-rule">✦ ❀ ✦</div><div className="certificate-overline">CHỨNG NHẬN HOÀN THÀNH HÀNH TRÌNH</div><h2>{name}</h2><p>Đã hoàn thành hành trình khám phá</p><h3>{journeyPlans[cert.journey_id]?.title||booking?.place_name||'Hành trình NÉP'}</h3>
