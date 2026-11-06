@@ -131,13 +131,8 @@ function Account({session}){
     if(rowError){await supabase.storage.from('nep-journey-photos').remove([path]);throw rowError}
    }
    setFiles([]);
-   const {data:certificateData,error:certificateError}=await supabase.rpc('customer_complete_journey',{p_booking_id:booking.id});
    await loadAccount();
-   if(certificateError){
-    setError('Ảnh đã được lưu thành công. Chứng nhận chưa được cấp: '+certificateError.message);
-   }else{
-    setError('Ảnh đã lưu và chứng nhận hoàn thành đã được cấp: '+(certificateData?.certificate_code||''));
-   }
+   setError('Đã lưu ảnh thành công. Bạn có thể tiếp tục lưu giữ khoảnh khắc; khi muốn nhận chứng nhận, hãy chọn “Đã hoàn thành hành trình” ở booking tương ứng.');
   }catch(err){setError(err.message||'Không tải được ảnh.')}finally{setBusy('')}
  }
  async function completeJourney(booking){
@@ -164,9 +159,7 @@ function Account({session}){
       {b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}
       {b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<>
        <small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name)}</small>
-       {b.status==='completed'
-        ? <button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang kiểm tra dữ liệu...':'Nhận chứng nhận'}</button>
-        : <small className="muted">Chứng nhận sẽ mở khi NÉP xác nhận hoàn thành booking và đủ check-in QR bắt buộc.</small>}
+       <button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang xác nhận...':'Đã hoàn thành hành trình'}</button>
       </>}
      </div>
     )) : <p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}
@@ -183,7 +176,7 @@ function Account({session}){
    <Link className="button small" to="/support">Gửi yêu cầu mới</Link>
   </section>
   <section className="panel memory-panel">
-   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Lưu ảnh thật theo từng booking. Ảnh là tùy chọn; chứng nhận được xét theo trạng thái booking và dữ liệu check-in của hành trình.</p>
+   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Tải ảnh lên để lưu giữ khoảnh khắc bất cứ lúc nào. Khi bạn chủ động bấm “Đã hoàn thành hành trình”, NÉP mới kiểm tra điều kiện và cấp chứng nhận nếu hợp lệ.</p>
    <form onSubmit={uploadPhotos}>
     <label className="field-label">Chọn chuyến đi<select required value={selectedBooking} onChange={e=>setSelectedBooking(e.target.value)}><option value="">Chọn booking đã gắn hành trình</option>{bookings.filter(b=>b.journey_id).map(b=><option key={b.id} value={b.id}>{b.place_name} · {b.travel_date}</option>)}</select></label>
     <label className="field-label">Hình ảnh kỷ niệm<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>setFiles(Array.from(e.target.files||[]))}/></label>
