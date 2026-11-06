@@ -136,11 +136,15 @@ function Account({session}){
   }catch(err){setError(err.message||'Không tải được ảnh.')}finally{setBusy('')}
  }
  async function completeJourney(booking){
+  if(!booking?.id){setError('Không xác định được booking.');return}
   setBusy(booking.id);setError('');
-  const {data,error}=await supabase.rpc('customer_complete_journey',{p_booking_id:booking.id});
-  if(error)setError(error.message);
-  else {await loadAccount();setError('Chứng nhận đã được cấp: '+data.certificate_code)}
-  setBusy('');
+  try{
+   const {data,error}=await supabase.rpc('customer_complete_journey',{p_booking_id:booking.id});
+   if(error){setError('Chưa thể cấp chứng nhận: '+error.message);return}
+   await loadAccount();
+   setError('Chứng nhận đã được cấp: '+(data?.certificate_code||data?.certificate_id||'Đã lưu'));
+  }catch(err){setError('Không thể xác nhận hoàn thành: '+(err?.message||'Lỗi kết nối'))}
+  finally{setBusy('')}
  }
  const name=session.user.user_metadata?.full_name||session.user.email;
  return <div className="page-wrap">
@@ -157,9 +161,9 @@ function Account({session}){
       <em>{b.status}</em>
       <span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>
       {b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}
-      {b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<>
-       <small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name)}</small>
-       <button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang xác nhận...':'Đã hoàn thành hành trình'}</button>
+      {!certificates.some(c=>c.booking_id===b.id)&&<>
+       <small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name||'Chuyến đi')}</small>
+       <button type="button" className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang xác nhận...':'Đã hoàn thành hành trình'}</button>
       </>}
      </div>
     )) : <p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}
