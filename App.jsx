@@ -90,7 +90,7 @@ function Booking({session}){
 
 function Account({session}){
  const [bookings,setBookings]=useState([]),[memory,setMemory]=useState(''),[memories,setMemories]=useState([]),[photos,setPhotos]=useState({}),[certificates,setCertificates]=useState([]),[supportRequests,setSupportRequests]=useState([]),[journeyPlans,setJourneyPlans]=useState({}),[error,setError]=useState(''),[busy,setBusy]=useState('');
- const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]),[refreshing,setRefreshing]=useState(false);
+ const [selectedBooking,setSelectedBooking]=useState(''),[files,setFiles]=useState([]),[selectedMemoryBooking,setSelectedMemoryBooking]=useState(''),[selectedMemoryPhoto,setSelectedMemoryPhoto]=useState(''),[refreshing,setRefreshing]=useState(false);
  async function loadAccount(){
   setRefreshing(true);
   const [b,m,p,cert,tickets]=await Promise.all([
@@ -114,11 +114,11 @@ function Account({session}){
   setRefreshing(false);
  }
  useEffect(()=>{loadAccount()},[]);
- async function addMemory(e){e.preventDefault();const {data,error}=await supabase.from('memories').insert({user_id:session.user.id,content:memory}).select().single();if(error){setError(error.message);return}setMemories([data,...memories]);setMemory('')}
+ async function addMemory(e){e.preventDefault();setBusy('memory');setError('');const booking=bookings.find(x=>x.id===selectedMemoryBooking);const photo=selectedMemoryPhoto?(photos[selectedMemoryBooking]||[]).find(x=>x.id===selectedMemoryPhoto):null;if(selectedMemoryPhoto&&!photo){setError('Ảnh đính kèm không thuộc booking đã chọn.');setBusy('');return}const payload={user_id:session.user.id,content:memory.trim(),booking_id:booking?.id||null,journey_photo_id:photo?.id||null};const {data,error}=await supabase.from('memories').insert(payload).select().single();if(error){setError(error.message);setBusy('');return}setMemories([data,...memories]);setMemory('');setSelectedMemoryPhoto('');setBusy('')}
  async function uploadPhotos(e){
   e.preventDefault();const booking=bookings.find(x=>x.id===selectedBooking);
   if(!booking?.journey_id){setError('Booking này chưa gắn với hành trình NÉP nên chưa thể lưu ảnh theo tour.');return}
-  if(!files.length){setError('Bà chọn ít nhất một hình ảnh hoặc bỏ qua phần này nhé.');return}
+  if(!files.length){setError('Bạn hãy chọn ảnh trước khi tải lên.');return}
   setBusy('upload');
   try{
    for(const f of files){
@@ -146,7 +146,7 @@ function Account({session}){
   {error&&<Status type={error.startsWith('Chứng nhận')?'success':'error'}>{error}</Status>}
   <div className="account-shortcuts"><Link className="button" to="/feedback">Gửi đánh giá</Link><Link className="button ghost" to="/support">Yêu cầu hỗ trợ</Link><Link className="button ghost" to="/booking">Đặt trải nghiệm</Link></div>
   <div className="account-grid">
-   <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em><span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>{b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}{b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<><small>{(photos[b.id]||[]).length} ảnh đã tải lên</small>{b.status!=='completed'?<button className="button small" disabled={busy===b.id||(photos[b.id]||[]).length===0} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang xác nhận...':'Tôi đã hoàn thành hành trình'}</button>:<button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang tạo...':'Nhận chứng nhận hoàn thành'}</button>}</>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
+   <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em><span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>{b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}{b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<><small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name)}</small><button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang kiểm tra dữ liệu...':b.status==='completed'?'Tạo chứng nhận':'Xác nhận hoàn thành hành trình'}</button></>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
 
   </div>
   <section className="panel memory-panel">
@@ -159,7 +159,7 @@ function Account({session}){
    <Link className="button small" to="/support">Gửi yêu cầu mới</Link>
   </section>
   <section className="panel memory-panel">
-   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Trong chuyến đi, bạn có thể tự nguyện chọn ảnh để lưu lại. Sau khi tải ít nhất một ảnh kỷ niệm, bạn có thể tự xác nhận hoàn thành để hệ thống cấp chứng nhận kèm ảnh.</p>
+   <h3><Camera/> Ký ức hành trình</h3><p className="muted">Lưu ảnh thật theo từng booking. Ảnh là tùy chọn; chứng nhận được xét theo trạng thái booking và dữ liệu check-in của hành trình.</p>
    <form onSubmit={uploadPhotos}>
     <label className="field-label">Chọn chuyến đi<select required value={selectedBooking} onChange={e=>setSelectedBooking(e.target.value)}><option value="">Chọn booking đã gắn hành trình</option>{bookings.filter(b=>b.journey_id).map(b=><option key={b.id} value={b.id}>{b.place_name} · {b.travel_date}</option>)}</select></label>
     <label className="field-label">Hình ảnh kỷ niệm<input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>setFiles(Array.from(e.target.files||[]))}/></label>
@@ -168,13 +168,13 @@ function Account({session}){
    </form>
    {Object.entries(photos).map(([bookingId,items])=><div className="memory-photo-group" key={bookingId}><b>{bookings.find(b=>b.id===bookingId)?.place_name||'Hành trình NÉP'}</b><div className="memory-photo-grid">{items.map(photo=><figure key={photo.id}><img src={photo.url} alt="Khoảnh khắc trong chuyến đi"/><figcaption>{new Date(photo.created_at).toLocaleDateString('vi-VN')}</figcaption></figure>)}</div></div>)}
   </section>
-  <section className="panel memory-panel"><h3><Heart/> Bưu thiếp ký ức</h3><form onSubmit={addMemory}><label className="field-label">Lưu một kỷ niệm<textarea required value={memory} onChange={e=>setMemory(e.target.value)} placeholder="Điều tôi muốn nhớ về chuyến đi này..."/></label><button className="button">Lưu ký ức</button></form><div className="memory-list">{memories.map(m=><blockquote key={m.id}>{m.content}<small>{new Date(m.created_at).toLocaleDateString('vi-VN')}</small></blockquote>)}</div></section>
+  <section className="panel memory-panel"><h3><Heart/> Bưu thiếp ký ức</h3><form onSubmit={addMemory}><label className="field-label">Gắn với chuyến đi (không bắt buộc)<select value={selectedMemoryBooking} onChange={e=>{setSelectedMemoryBooking(e.target.value);setSelectedMemoryPhoto('')}}><option value="">Kỷ niệm chung</option>{bookings.filter(b=>b.journey_id).map(b=><option key={b.id} value={b.id}>{journeyPlans[b.journey_id]?.title||b.place_name} · {b.travel_date}</option>)}</select></label>{selectedMemoryBooking&&<label className="field-label">Đính kèm ảnh đã lưu (không bắt buộc)<select value={selectedMemoryPhoto} onChange={e=>setSelectedMemoryPhoto(e.target.value)}><option value="">Không đính kèm ảnh</option>{(photos[selectedMemoryBooking]||[]).map(p=><option key={p.id} value={p.id}>{p.caption||('Ảnh ngày '+new Date(p.created_at).toLocaleDateString('vi-VN'))}</option>)}</select></label>}<label className="field-label">Lời nhắn của bạn<textarea required maxLength="2000" value={memory} onChange={e=>setMemory(e.target.value)} placeholder="Điều tôi muốn nhớ về chuyến đi này..."/></label><button className="button" disabled={busy==='memory'||!memory.trim()}>{busy==='memory'?'Đang lưu...':'Lưu bưu thiếp'}</button></form><div className="memory-list">{memories.map(m=>{const linkedBooking=bookings.find(b=>b.id===m.booking_id);const linkedPhoto=m.journey_photo_id?Object.values(photos).flat().find(p=>p.id===m.journey_photo_id):null;return <blockquote key={m.id}>{m.content}{linkedPhoto&&<img src={linkedPhoto.url} alt="Ảnh trong bưu thiếp" style={{display:'block',width:'100%',maxHeight:180,objectFit:'cover',borderRadius:9,marginTop:10}}/>}<small>{linkedBooking?(journeyPlans[linkedBooking.journey_id]?.title||linkedBooking.place_name)+' · ':''}{new Date(m.created_at).toLocaleDateString('vi-VN')}</small></blockquote>})}</div></section>
   <section className="panel memory-panel"><h3><ShieldCheck/> Chứng nhận hành trình</h3>
    {certificates.length?certificates.map(cert=>{const booking=bookings.find(b=>b.id===cert.booking_id);const items=photos[cert.booking_id]||[];return <article className="journey-certificate" id={'certificate-'+cert.id} key={cert.id}>
-    <div className="certificate-kicker">NÉP · CHẠM VÀO NÉT RIÊNG VIỆT NAM</div><div className="certificate-rule">✦ ❀ ✦</div><div className="certificate-overline">CHỨNG NHẬN HOÀN THÀNH HÀNH TRÌNH</div><h2>{name}</h2><p>Đã hoàn thành hành trình khám phá</p><h3>{booking?.place_name||'Hành trình NÉP'}</h3>
+    <div className="certificate-kicker">NÉP · CHẠM VÀO NÉT RIÊNG VIỆT NAM</div><div className="certificate-rule">✦ ❀ ✦</div><div className="certificate-overline">CHỨNG NHẬN HOÀN THÀNH HÀNH TRÌNH</div><h2>{name}</h2><p>Đã hoàn thành hành trình khám phá</p><h3>{journeyPlans[cert.journey_id]?.title||booking?.place_name||'Hành trình NÉP'}</h3>
     {items.length?<div className="certificate-photos">{items.slice(0,4).map(p=><img key={p.id} src={p.url} alt="Ảnh kỷ niệm trên chứng nhận"/>)}</div>:<div className="certificate-no-photo">Mỗi hành trình là một câu chuyện đáng nhớ</div>}
     <p className="certificate-date">Ngày cấp: {new Date(cert.issued_at).toLocaleDateString('vi-VN')}</p><div className="certificate-code">MÃ CHỨNG NHẬN · {cert.certificate_code}</div><button className="button small no-print" onClick={()=>window.print()}>In / Lưu chứng nhận</button>
-   </article>}) : <p className="muted">Sau khi bạn tải ảnh và tự xác nhận hoàn thành hành trình, chứng nhận sẽ xuất hiện tại đây.</p>}
+   </article>}) : <p className="muted">Chứng nhận chỉ được cấp khi dữ liệu booking và điều kiện hoàn thành hành trình đã được hệ thống xác thực. Ảnh không phải điều kiện bắt buộc.</p>}
   </section>
  </div>
 }
