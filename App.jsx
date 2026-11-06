@@ -146,7 +146,24 @@ function Account({session}){
   {error&&<Status type={error.startsWith('Chứng nhận')?'success':'error'}>{error}</Status>}
   <div className="account-shortcuts"><Link className="button" to="/feedback">Gửi đánh giá</Link><Link className="button ghost" to="/support">Yêu cầu hỗ trợ</Link><Link className="button ghost" to="/booking">Đặt trải nghiệm</Link></div>
   <div className="account-grid">
-   <div className="panel"><h3><TicketCheck/> Booking của tôi</h3>{bookings.length?bookings.map(b=><div className="data-row" key={b.id}><b>{b.place_name}</b><span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span><em>{b.status}</em><span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>{b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}{b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<><small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name)}</small>{b.status==='completed'?<button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang kiểm tra dữ liệu...':'Nhận chứng nhận'}</button>:<small className="muted">Chứng nhận sẽ mở khi NÉP xác nhận hoàn thành booking và đủ check-in QR bắt buộc.</small>}</>}</>}</div>):<p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}</div>
+   <div className="panel">
+    <h3><TicketCheck/> Booking của tôi</h3>
+    {bookings.length ? bookings.map(b => (
+     <div className="data-row" key={b.id}>
+      <b>{b.place_name}</b>
+      <span>{b.booking_code} · {b.travel_date} · {b.guests} khách</span>
+      <em>{b.status}</em>
+      <span>Thanh toán: {b.payment_status==='paid_demo'?'Đã thanh toán (mô phỏng)':'Chưa thanh toán'}</span>
+      {b.payment_reference&&<small>Mã giao dịch: {b.payment_reference}</small>}
+      {b.journey_id&&!certificates.some(c=>c.booking_id===b.id)&&<>
+       <small>{(photos[b.id]||[]).length} ảnh kỷ niệm · {(journeyPlans[b.journey_id]?.title||b.place_name)}</small>
+       {b.status==='completed'
+        ? <button className="button small" disabled={busy===b.id} onClick={()=>completeJourney(b)}>{busy===b.id?'Đang kiểm tra dữ liệu...':'Nhận chứng nhận'}</button>
+        : <small className="muted">Chứng nhận sẽ mở khi NÉP xác nhận hoàn thành booking và đủ check-in QR bắt buộc.</small>}
+      </>}
+     </div>
+    )) : <p className="muted">Bạn chưa có yêu cầu đặt chỗ.</p>}
+   </div>
 
   </div>
   <section className="panel memory-panel">
