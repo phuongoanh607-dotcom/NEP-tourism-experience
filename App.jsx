@@ -236,7 +236,7 @@ function Admin({session}){
   ]);
   const err=results.find(r=>r.error);if(err){setError(err.error.message);return}
   [setBookings,setPlaces,setFeedback,setSupport,setJourneys,setDepartures,setStops].forEach((setter,i)=>setter(results[i].data||[]));
-  setDepartureForm(x=>({...x,journey_id:x.journey_id||(results[6].data||[]).find(j=>j.is_published)?.id||(results[6].data||[])[0]?.id||''}));
+  setDepartureForm(x=>({...x,journey_id:x.journey_id||(results[4].data||[]).find(j=>j.is_published)?.id||(results[4].data||[])[0]?.id||''}));
  }
  useEffect(()=>{load()},[]);
  async function update(table,id,patch){const {error}=await supabase.from(table).update(patch).eq('id',id);if(error){setError(error.message);return}load()}
