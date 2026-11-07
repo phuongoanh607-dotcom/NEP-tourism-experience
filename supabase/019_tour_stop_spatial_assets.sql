@@ -13,7 +13,9 @@ alter table public.journey_stops
   drop constraint if exists journey_stops_lng_range_check,
   add constraint journey_stops_lat_range_check check (lat is null or lat between -90 and 90),
   add constraint journey_stops_lng_range_check check (lng is null or lng between -180 and 180),
-  add constraint journey_stops_model_url_https_check check (model_url is null or model_url ~ '^https://');
+  add constraint journey_stops_model_url_https_check check (model_url is null or model_url ~ '^https://'),
+  add constraint journey_stops_coordinate_pair_check check ((lat is null and lng is null) or (lat is not null and lng is not null)),
+  add constraint journey_stops_model_provenance_check check (model_url is null or (nullif(trim(model_source),'') is not null and nullif(trim(model_accuracy),'') is not null));
 
 create index if not exists journey_stops_journey_order_idx
   on public.journey_stops (journey_id, stop_order);
