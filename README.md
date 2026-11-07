@@ -41,7 +41,7 @@ Without Supabase credentials the app deliberately shows a configuration warning.
 
 ## Supabase setup and administrator
 
-The repository contains the initial schema at `001_initial_schema.sql` and subsequent SQL changes at the repository root and in `supabase/`. Confirm which migrations have already been applied before running additional scripts; some files are sequential changes and some are alternative/overlapping revisions.
+The repository contains the initial schema at `001_initial_schema.sql` and subsequent SQL changes at the repository root and in `supabase/`. The tour-stop spatial/3D fields are added by `supabase/019_tour_stop_spatial_assets.sql`; review and apply this migration in Supabase before using the new stop editor and linked tour previews. Confirm which migrations have already been applied before running additional scripts; some files are sequential changes and some are alternative/overlapping revisions.
 
 To create the first administrator safely:
 
@@ -66,8 +66,8 @@ Never expose the service-role key or grant admin role from a public client form.
 - Persistent booking requests and admin status changes.
 - Persistent customer feedback and support tickets.
 - Private memory entries tied to the signed-in customer.
-- Place and local storyteller management in the admin area.
-- QR generation and database-validated check-in.
+- Destination and tour-stop management in the admin area.
+- Booking-bound QR check-in for required tour stops, validated by the database.
 - Open-Meteo weather information and Google Maps directions links.
 - Responsive UI and original inline NÉP logo artwork.
 
@@ -81,3 +81,14 @@ A successful Vite build only verifies that the frontend compiles. Before treatin
 - Use only the Supabase publishable/anon key in frontend environment variables.
 - Add CAPTCHA/rate limiting, audit logs, privacy/consent text, backups, monitoring, and a formal support workflow before a public launch.
 - Weather information is informational and is not a substitute for official severe-weather alerts.
+
+
+## NÉP product direction
+
+NÉP focuses on lesser-known places in Vietnam and connects natural landscapes with local culture and community experiences. The main flow is: discover a place → understand the local context → explore a curated tour → review its stops, map and optional 3D model → book.
+
+- **NÉP Explorer** matches visitor preferences with published destinations and tours using transparent rules; it is not represented as generative AI.
+- **Tour stops** link to existing places where possible. Coordinates support map directions. Optional GLB/GLTF assets appear only on the relevant stop; a tour does not need a 3D model at every stop.
+- **3D provenance** should identify the source and whether the model is illustrative or measured. Illustrative models must not be presented as accurate terrain.
+- **Memory Capsule** stores private trip photos and booking-linked memories.
+- Discovery Passport and standalone Storyteller features are not part of the current product experience. Legacy database tables and migration files are retained to protect existing records; they are not exposed as active navigation features.
